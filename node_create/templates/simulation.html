@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Simulation</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+<script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+.button {
+    padding: 10px; 
+    background-color: #0078ff; 
+    color: white; 
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+}
+#start_button {
+    position: absolute; 
+    top: 10px; 
+    left: 10px; 
+}
+#stop_button {
+    position: absolute; 
+    top: 60px; 
+    left: 10px; 
+}
+#route_button {
+    position: absolute; 
+    top: 110px; 
+    left: 10px; 
+}
+#route_next {
+    position: absolute; 
+    top: 160px; 
+    left: 10px; 
+}
+.popup {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+}
+</style>
+</head>
+<body>
+    <div id="map"></div>
+    <button id="start_button" class="button">Start Simulation</button>
+    <button id="stop_button" class="button">Stop Simulation</button>
+    <button id="route_button" class="button">Find Route</button>
+    <button id="route_next" class="button">Next Route</button>
+    <script type="module" src="../static/simulation.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display buildings in 3D</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+#select-button { position: absolute; top: 10px; left: 10px; padding: 10px; background-color: #0078ff; color: white; cursor: pointer; }
+/* 팝업 메뉴의 스타일 */
+.popup {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+        }
+#reloadButton { position: absolute; top: 10px; left: 180px; padding: 10px; background-color: #0078ff; color: white; cursor: pointer; }
+#simulation-button { position: absolute; top: 10px; left: 320px; padding: 10px; background-color: #0078ff; color: white; cursor: pointer; }
+</style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="select-button">Select Coordinates</div>
+    <button id="reloadButton">Load Coordinates</button>
+    <script src="../static/map.js"></script>
+
+    <button id="simulation-button">시뮬레이션</button>
+    <script>
+        document.getElementById('simulation-button').addEventListener('click', function() {
+            window.open('simulation', '_blank'); // 새 창에서 시뮬레이션 웹 페이지를 엽니다
+        });
+    </script>
+</body>
+</html>
