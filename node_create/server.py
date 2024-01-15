@@ -3,9 +3,13 @@ from flask_cors import CORS
 from pymongo import MongoClient
 import os
 import math
+from pathFinding import pathFinding_blueprint  # Import the blueprint
 
 app = Flask(__name__)
 CORS(app)
+
+# Register the blueprint
+app.register_blueprint(pathFinding_blueprint)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -18,7 +22,7 @@ client = MongoClient('mongodb+srv://srlabmongodb:mongodb1234@pathmaker.4frvxqx.m
 db = client['usg']  # 여기서 'your_database_name'을 실제 데이터베이스 이름으로 바꿔주세요.
 collectionGps = db['gps']  # 좌표를 저장할 컬렉션 이름
 collectionStartGps = db['startGps']
-
+collectionEndGps = db['endGps']
 
 def update_nodeindex():
     # 1. gps 컬렉션에서 모든 nodeIndex 값을 가져온다.
@@ -66,6 +70,7 @@ def get_coordinates():
     # Check if coordinates are in startGps and add a flag
     for coord in coordinates_data:
         coord['isStartPoint'] = collectionStartGps.find_one({'lng': coord['lng'], 'lat': coord['lat']}) is not None
+        coord['isEndPoint'] = collectionEndGps.find_one({'lng': coord['lng'], 'lat': coord['lat']}) is not None
 
     return jsonify(coordinates_data)
 
@@ -170,114 +175,25 @@ def save_starting_point():
         return jsonify(message='Data copied to startGps successfully')
     else:
         return jsonify(message='No data found with given coordinates'), 404
+    
+@app.route('/save_ending_point', methods=['POST'])
+def save_ending_point():
+    lng = request.args.get('lng')
+    lat = request.args.get('lat')
+    
+    # 'startGps' 컬렉션에서 좌표가 이미 있는지 확인
+    if db.endGps.find_one({'lng': float(lng), 'lat': float(lat)}):
+        return jsonify(message='이미 도착지로 지정된 마커입니다.'), 400
 
-@app.route('/calculate_shortest_path', methods=['POST'])
-def calculate_shortest_path():
-    try:
-        class Graph:
-            def __init__(self):
-                self.nodes = set()
-                self.edges = {}
-                self.distances = {}
+    # 'gps' 컬렉션에서 좌표 찾기
+    existing_data = db.gps.find_one({'lng': float(lng), 'lat': float(lat)})
 
-            def add_node(self, value):
-                self.nodes.add(value)
-
-            def add_edge(self, from_node, to_node, distance):
-                self.edges.setdefault(from_node, [])
-                self.edges[from_node].append(to_node)
-                self.distances[(from_node, to_node)] = distance
-
-        def dijkstra(graph, initial):
-            visited = {initial: 0}
-            path = {}
-
-            nodes = set(graph.nodes)
-
-            while nodes:
-                min_node = None
-                for node in nodes:
-                    if node in visited:
-                        if min_node is None:
-                            min_node = node
-                        elif visited[node] < visited[min_node]:
-                            min_node = node
-
-                if min_node is None:
-                    break
-
-                nodes.remove(min_node)
-                current_weight = visited[min_node]
-
-                for edge in graph.edges.get(min_node, []):
-                    weight = current_weight + graph.distances[(min_node, edge)]
-                    if edge not in visited or weight < visited[edge]:
-                        visited[edge] = weight
-                        path[edge] = min_node
-
-            return visited, path
-
-        def get_distance(lon1, lat1, lon2, lat2):
-            # Radius of the Earth in km
-            R = 6378.137
-            # Converting degrees to radians
-            dLon = math.radians(lon2 - lon1)
-            dLat = math.radians(lat2 - lat1)
-            # Haversine formula
-            a = math.sin(dLat / 2) * math.sin(dLat / 2) + \
-                math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * \
-                math.sin(dLon / 2) * math.sin(dLon / 2)
-            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-            d = R * c
-
-            return d * 1000  # Return distance in meters
-
-        def build_graph():
-            graph = Graph()
-            nodes_data = list(collectionGps.find({}))
-
-            for node in nodes_data:
-                graph.add_node(node['nodeIndex'])
-
-                for edge in node['nodeEdge']:
-                    target_node = collectionGps.find_one({'nodeIndex': edge})
-                    if target_node:
-                        distance = get_distance(node['lat'], node['lng'], target_node['lat'], target_node['lng'])
-                        graph.add_edge(node['nodeIndex'], edge, distance)
-
-            return graph
-
-        # Example usage
-        graph = build_graph()
-        # Assuming we want to find the shortest path from node index 0 to node index 5
-        start_node = 0
-        end_node = 5
-        distances, paths = dijkstra(graph, start_node)
-        shortest_path = []
-        current_node = end_node
-        coordinates = []  # 좌표값을 저장할 리스트 추가
-
-        while current_node != start_node:
-            shortest_path.append(current_node)
-            current_node = paths[current_node]
-
-        shortest_path.append(start_node)
-        shortest_path.reverse()
-
-        # 노드 번호에 해당하는 좌표값을 가져와 coordinates 리스트에 추가
-        for node_index in shortest_path:
-            node_data = collectionGps.find_one({'nodeIndex': node_index})
-            if node_data:
-                coordinates.append({'lng': node_data['lng'], 'lat': node_data['lat']})
-
-        print("Shortest path:", shortest_path)
-        print("Total distance:", distances[end_node])
-
-        # 최단 경로와 좌표값을 JSON으로 반환
-        return jsonify({"shortest_path": shortest_path, "coordinates": coordinates, "total_distance": distances[end_node]})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
+    if existing_data:
+        # 'startGps' 컬렉션으로 데이터 복사
+        db.endGps.insert_one(existing_data)
+        return jsonify(message='Data copied to startGps successfully')
+    else:
+        return jsonify(message='No data found with given coordinates'), 404
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

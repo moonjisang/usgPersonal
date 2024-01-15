@@ -12,8 +12,9 @@ export class Mapbox3DModel {
         this.targetPosition; // 타겟 좌표 지리적 좌표로 저장
         this.mercatorTargetPosition; // 타겟 좌표 메르카토르 좌표로 저장
         this.modelTranslateLngLat // 현재 좌표 지리적 좌표
-        this.modelAsMercatorCoordinate
+        this.modelAsMercatorCoordinate // 현재 좌표 메르카토르 좌표
         this.add3DModel();
+        this.paused = false; // 이동 일시 정지 상태를 나타내는 변수
     }
 
     add3DModel() {
@@ -42,6 +43,24 @@ export class Mapbox3DModel {
         });
     }
 
+    change3DModelLocation(origin, altitude) {
+        this.modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+            origin,
+            altitude
+        );
+
+        // 3D 모델 트랜스폼 설정
+        this.modelTransform = {
+            translateX: this.modelAsMercatorCoordinate.x,
+            translateY: this.modelAsMercatorCoordinate.y,
+            translateZ: this.modelAsMercatorCoordinate.z,
+            rotateX: this.modelRotate[0],
+            rotateY: this.modelRotate[1],
+            rotateZ: this.modelRotate[2],
+            scale: this.modelScale
+        };
+    }
+
     // Method to set the target position
     setTargetPosition(targetLng, targetLat, targetAltitude) {
         // Store the target position in both geographic and Mercator coordinates
@@ -51,8 +70,20 @@ export class Mapbox3DModel {
             targetAltitude
         );
         this.isMoving = true;
+        console.log('origin : ', this.modelOrigin)
     }
 
+    checkMoving() {
+        return !this.isMoving;
+    }
+
+    pauseMoving() { // 3D 모델의 이동 일시 정지
+        this.paused = true;
+    }
+
+    resumeMoving() { // 3D 모델의 이동 재개
+        this.paused = false;
+    }
 
     getDistance([lon1, lat1], [lon2, lat2]) { // generally used geo measurement function
         const R = 6378.137 // Radius of earth in KM
@@ -126,34 +157,39 @@ export class Mapbox3DModel {
     }
 
     render(gl, matrix) {
-        if (this.isMoving) {
-            // Interpolation logic
-            const speed = 0.005; // Adjust speed as needed
-            // 메르카토르 좌표를 지리적 좌표로 변환
-            this.modelTranslateLngLat = new mapboxgl.MercatorCoordinate(this.modelTransform.translateX, this.modelTransform.translateY, this.modelTransform.translateZ).toLngLat();
-            const distance = this.getDistance(
-                [this.modelTranslateLngLat.lng, this.modelTranslateLngLat.lat],
-                [this.targetPosition.lng, this.targetPosition.lat]
-            );
-            // console.log(
-            //     [this.modelTranslateLngLat.lng, this.modelTranslateLngLat.lat],
-            //     [this.targetPosition.lng, this.targetPosition.lat]
-            // );
-            if (distance < 1) {
-                this.isMoving = false;
-                console.log(distance);
-                console.log('false');
-            } else {
-                // 아직 이동 중이므로 메르카토르 좌표 간의 거리에 따라 이동
-                this.modelTransform.translateX +=
-                    (this.mercatorTargetPosition.x - this.modelAsMercatorCoordinate.x) * speed;
-                this.modelTransform.translateY +=
-                    (this.mercatorTargetPosition.y - this.modelAsMercatorCoordinate.y) * speed;
-                this.modelTransform.translateZ +=
-                    (this.mercatorTargetPosition.z - this.modelAsMercatorCoordinate.z) * speed;
+        if (!this.paused) {
+            if (this.isMoving) {
+                // Interpolation logic
+                const speed = 0.005; // Adjust speed as needed
+                // 메르카토르 좌표를 지리적 좌표로 변환
+                this.modelTranslateLngLat = new mapboxgl.MercatorCoordinate(this.modelTransform.translateX, this.modelTransform.translateY, this.modelTransform.translateZ).toLngLat();
+                const distance = this.getDistance(
+                    [this.modelTranslateLngLat.lng, this.modelTranslateLngLat.lat],
+                    [this.targetPosition.lng, this.targetPosition.lat]
+                );
+                // console.log(
+                //     [this.modelTranslateLngLat.lng, this.modelTranslateLngLat.lat],
+                //     [this.targetPosition.lng, this.targetPosition.lat]
+                // );
+                if (distance < 1) {
+                    this.isMoving = false;
+                    this.modelOrigin = [this.targetPosition.lng, this.targetPosition.lat]
+                    this.change3DModelLocation(this.modelOrigin, this.targetPosition.altitude)
+                    console.log(distance);
+                    console.log('false');
+                } else {
+                    // 아직 이동 중이므로 메르카토르 좌표 간의 거리에 따라 이동
+                    this.modelTransform.translateX +=
+                        (this.mercatorTargetPosition.x - this.modelAsMercatorCoordinate.x) * speed;
+                    this.modelTransform.translateY +=
+                        (this.mercatorTargetPosition.y - this.modelAsMercatorCoordinate.y) * speed;
+                    // this.modelTransform.translateZ +=
+                    //     (this.mercatorTargetPosition.z - this.modelAsMercatorCoordinate.z) * speed;
+                }
             }
+    
+            
         }
-
         // 애니메이션 믹서 업데이트
         if (this.mixer) {
             var delta = this.clock.getDelta();

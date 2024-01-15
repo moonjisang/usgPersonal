@@ -15,6 +15,8 @@ const map = new mapboxgl.Map({
 let model; // 전역 변수로 model 선언
 let coordinates
 let currentIndex = 1
+// 변수를 사용하여 현재 상태를 저장합니다.
+let isSimulationPaused = false;
 
 map.on('load', function () {
     const modelUrl = '/static/gltf/drone/scene.gltf'; // Update with your model path
@@ -31,10 +33,28 @@ map.on('load', function () {
                 .addTo(map);
             marker.nodeIndex = coords.nodeIndex;
 
+            var label = document.createElement('div');
+            label.innerHTML = 'Node<br>Index&nbsp:&nbsp' + coords.nodeIndex;
+            label.style.color = 'black';
+            label.style.position = 'absolute';
+            label.style.top = '30px'; // 위 아래 조정
+            label.style.left = '0px'; // 좌우 조정
+            label.style.fontSize = '12px';
+            label.style.fontWeight = 'bold'; // 글자 굵게 설정
+            marker.getElement().appendChild(label);
+
             // Add a label for start points
             if (coords.isStartPoint) {
                 var label = document.createElement('div');
                 label.textContent = 'Start Point';
+                label.style.color = 'red';
+                label.style.position = 'absolute';
+                label.style.top = '-20px';
+                marker.getElement().appendChild(label);
+            }
+            if (coords.isEndPoint) {
+                var label = document.createElement('div');
+                label.textContent = 'End Point';
                 label.style.color = 'red';
                 label.style.position = 'absolute';
                 label.style.top = '-20px';
@@ -45,27 +65,10 @@ map.on('load', function () {
     .catch(error => console.error('Error fetching data:', error));
 });
 
-// Start Simulation 버튼에 대한 이벤트 리스너 추가
-document.getElementById('start_button').addEventListener('click', function() {
-    console.log(coordinates)
-    // 최단 경로 데이터를 사용하여 3D 모델을 이동합니다.
-    moveModelAlongRoute(coordinates);
-    
-    // model.setTargetPosition(128.09530124636944, 35.1538675805656, 200); // 새로운 좌표로 모델 이동
-});
-
 document.getElementById('route_button').addEventListener('click', function() {
-    const startNode = 0; // 시작 노드 인덱스를 원하는 값으로 대체
-    const endNode = 5;   // 종료 노드 인덱스를 원하는 값으로 대체
 
     // 서버에 POST 요청을 보냅니다.
-    fetch('/calculate_shortest_path', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ start_node: startNode, end_node: endNode }),
-    })
+    fetch('/calculate_shortest_path')
     .then(response => response.json())
     .then(data => {
         // 응답 데이터를 처리합니다. 예: 최단 경로로 3D 모델을 이동합니다.
@@ -81,22 +84,55 @@ document.getElementById('route_button').addEventListener('click', function() {
             shortestPathElement.textContent = data.shortest_path.join(' -> ');
             totalDistanceElement.textContent = data.total_distance + ' 미터';
         };
-
         coordinates = data.coordinates
     })
     .catch(error => console.error('데이터 가져오기 오류:', error));
 });
 
-// Next Route 버튼에 대한 이벤트 리스너 추가
-document.getElementById('route_next').addEventListener('click', function() {
-
+// moveModelToNextCoordinate 함수를 외부에서 호출할 수 있도록 전역 함수로 정의
+function moveModelToNextCoordinate() {
     if (currentIndex < coordinates.length) {
         console.log('index : ', currentIndex)
         const nodeCoordinates = coordinates[currentIndex];
         console.log('coord : ', coordinates[currentIndex])
 
         // 3D 모델을 다음 좌표로 이동합니다.
-        model.setTargetPosition(nodeCoordinates.lng, nodeCoordinates.lat, 200); // 좌표값 및 이동 시간을 조정하십시오.
-        currentIndex++; // 다음 좌표로 이동
+        model.setTargetPosition(nodeCoordinates.lng, nodeCoordinates.lat, 100); // 좌표값 및 이동 시간을 조정하십시오.
+        
+        // 주기적으로 checkMoving 함수 호출하여 움직임 확인
+        const checkInterval = setInterval(function() {
+            if (model.checkMoving()) {
+                // 3D 모델이 이동 완료된 경우 실행할 코드를 여기에 추가
+                console.log("3D 모델 이동 완료");
+
+                // 이동 완료 시 clearInterval을 사용하여 주기적인 호출 중지
+                clearInterval(checkInterval);
+
+                // currentIndex를 증가시켜 다음 좌표로 이동
+                currentIndex++;
+                
+                // 다음 좌표로 이동하는 함수 호출 (이 부분을 작성해야 함)
+                moveModelToNextCoordinate();
+            }
+        }, 1000); // 1000밀리초(1초)마다 호출
+    } else {
+        console.log('복귀 완료')
     }
+}
+
+// Next Route 버튼에 대한 이벤트 리스너 추가
+document.getElementById('start_button').addEventListener('click', moveModelToNextCoordinate);
+
+// Stop Route 버튼에 대한 이벤트 리스너 추가
+document.getElementById('stop_button').addEventListener('click', function() {
+    if (!isSimulationPaused) {
+        // 3D 모델의 이동을 일시 정지하고 버튼 텍스트를 변경합니다.
+        model.pauseMoving();
+        this.textContent = 'Resume Simulation'; // 버튼 텍스트 변경
+    } else {
+        // "Resume Simulation" 버튼을 클릭하면 3D 모델의 이동을 다시 시작하고 버튼 텍스트를 변경합니다.
+        model.resumeMoving();
+        this.textContent = 'Stop Route'; // 버튼 텍스트 변경
+    }
+    isSimulationPaused = !isSimulationPaused; // 상태를 토글합니다.
 });

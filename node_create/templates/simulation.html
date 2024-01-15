@@ -19,24 +19,29 @@ body { margin: 0; padding: 0; }
     border: none;
     border-radius: 3px;
 }
-#start_button {
+.button2 {
+    padding: 10px; 
+    background-color: #ff0000bd; 
+    color: white; 
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+}
+#route_button {
     position: absolute; 
     top: 10px; 
     left: 10px; 
 }
-#stop_button {
+#start_button {
+    display: none; /* 처음에는 숨김 */
     position: absolute; 
     top: 60px; 
     left: 10px; 
 }
-#route_button {
+#stop_button {
+    display: none; /* 처음에는 숨김 */
     position: absolute; 
     top: 110px; 
-    left: 10px; 
-}
-#route_next {
-    position: absolute; 
-    top: 160px; 
     left: 10px; 
 }
 .popup {
@@ -49,10 +54,20 @@ body { margin: 0; padding: 0; }
 </head>
 <body>
     <div id="map"></div>
-    <button id="start_button" class="button">Start Simulation</button>
-    <button id="stop_button" class="button">Stop Simulation</button>
     <button id="route_button" class="button">Find Route</button>
-    <button id="route_next" class="button">Next Route</button>
+    <button id="start_button" class="button2">Start Simulation</button>
+    <button id="stop_button" class="button2">Stop Simulation</button>
     <script type="module" src="../static/simulation.js"></script>
+    <script>
+        // Find Route 버튼 클릭 시 Start 및 Stop 버튼 표시
+        const routeButton = document.getElementById('route_button');
+        const startButton = document.getElementById('start_button');
+        const stopButton = document.getElementById('stop_button');
+
+        routeButton.addEventListener('click', () => {
+            startButton.style.display = 'block'; // Start 버튼 표시
+            stopButton.style.display = 'block'; // Stop 버튼 표시
+        });
+    </script>
 </body>
 </html>

@@ -86,6 +86,7 @@ function markerClickHandler(marker) {
                 <h3>마커 정보</h3>
                 <p>${lngLatString}</p>
                 <button id="startingPointButton">Starting Point</button>
+                <button id="endingPointButton">Ending Point</button>
                 <button id="deleteButton">Delete</button>
             </div>`;
 
@@ -152,6 +153,38 @@ function markerClickHandler(marker) {
                     if (response.status === 400) {
                         return response.json().then(data => {
                             alert(data.message); // '이미 출발지로 지정된 마커입니다.'
+                        });
+                    } else {
+                        return response.json().then(data => {
+                            console.log(data.message);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            document.getElementById('endingPointButton').addEventListener('click', function() {
+                // 라벨을 추가할 마커 요소 선택
+                var markerElement = marker.getElement();
+
+                // 라벨용 HTML 요소 생성
+                var label = document.createElement('div');
+                label.textContent = 'End Point';
+                label.style.color = 'red'; // 색상 설정
+                label.style.position = 'absolute';
+                label.style.top = '-20px'; // 라벨 위치 조정
+
+                // 마커에 라벨 추가
+                markerElement.appendChild(label);
+
+                fetch(`/save_ending_point?lng=${lng}&lat=${lat}`, {
+                    method: 'POST'
+                }).then(response => {
+                    if (response.status === 400) {
+                        return response.json().then(data => {
+                            alert(data.message); // '이미 도착지로 지정된 마커입니다.'
                         });
                     } else {
                         return response.json().then(data => {
@@ -276,6 +309,16 @@ function fetchCoordinatesAndAddToMap() {
                 var marker = new mapboxgl.Marker()
                     .setLngLat([coords.lng, coords.lat])
                     .addTo(map);
+                var label = document.createElement('div');
+                label.innerHTML = 'Node<br>Index&nbsp:&nbsp' + coords.nodeIndex;
+                label.style.color = 'black';
+                label.style.position = 'absolute';
+                label.style.top = '30px'; // 위 아래 조정
+                label.style.left = '0px'; // 좌우 조정
+                label.style.fontSize = '12px';
+                label.style.fontWeight = 'bold'; // 글자 굵게 설정
+                marker.getElement().appendChild(label);
+
                 marker.nodeIndex = coords.nodeIndex;
                 existingMarkers.push(marker);
 
@@ -283,6 +326,15 @@ function fetchCoordinatesAndAddToMap() {
                 if (coords.isStartPoint) {
                     var label = document.createElement('div');
                     label.textContent = 'Start Point';
+                    label.style.color = 'red';
+                    label.style.position = 'absolute';
+                    label.style.top = '-20px';
+                    marker.getElement().appendChild(label);
+                }
+                // Add a label for end points
+                if (coords.isEndPoint) {
+                    var label = document.createElement('div');
+                    label.textContent = 'End Point';
                     label.style.color = 'red';
                     label.style.position = 'absolute';
                     label.style.top = '-20px';
