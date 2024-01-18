@@ -1,5 +1,5 @@
 export class Mapbox3DModel {
-    constructor(modelUrl, map, modelOrigin, modelAltitude) {
+    constructor(modelUrl, map, modelOrigin, modelAltitude, modelIndex, modelSpeed) {
         this.modelUrl = modelUrl;
         this.map = map;
         this.modelOrigin = modelOrigin
@@ -13,11 +13,14 @@ export class Mapbox3DModel {
         this.mercatorTargetPosition; // 타겟 좌표 메르카토르 좌표로 저장
         this.modelTranslateLngLat // 현재 좌표 지리적 좌표
         this.modelAsMercatorCoordinate // 현재 좌표 메르카토르 좌표
-        this.add3DModel();
+        this.add3DModel(modelIndex);
         this.paused = false; // 이동 일시 정지 상태를 나타내는 변수
+        this.currentIndex = 1
+        this.coordinates
+        this.modelSpeed = modelSpeed
     }
 
-    add3DModel() {
+    add3DModel(modelIndex) {
         this.modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
             this.modelOrigin,
             this.modelAltitude
@@ -35,7 +38,7 @@ export class Mapbox3DModel {
         };
 
         this.map.addLayer({
-            id: '3d-model',
+            id: `3d-model${modelIndex}`,
             type: 'custom',
             renderingMode: '3d',
             onAdd: (map, gl) => this.onAdd(map, gl),
@@ -71,6 +74,35 @@ export class Mapbox3DModel {
         );
         this.isMoving = true;
         console.log('origin : ', this.modelOrigin)
+    }
+
+    moveModelToNextCoordinate(coordinates) {
+        this.coordinates = coordinates
+        if (this.currentIndex < coordinates.length) {
+
+            const nodeCoordinates = this.coordinates[this.currentIndex];
+            // 3D 모델을 다음 좌표로 이동합니다.
+            this.setTargetPosition(nodeCoordinates.lng, nodeCoordinates.lat, 100); // 좌표값 및 이동 시간을 조정하십시오.
+
+            // 주기적으로 checkMoving 함수 호출하여 움직임 확인
+            const checkInterval = setInterval(() => {
+                if (this.checkMoving()) {
+                    // 3D 모델이 이동 완료된 경우 실행할 코드를 여기에 추가
+                    console.log("3D 모델 이동 완료");
+
+                    // 이동 완료 시 clearInterval을 사용하여 주기적인 호출 중지
+                    clearInterval(checkInterval);
+
+                    // this.currentIndex를 증가시켜 다음 좌표로 이동
+                    this.currentIndex++;
+
+                    // 다음 좌표로 이동하는 함수 호출
+                    this.moveModelToNextCoordinate(this.coordinates);
+                }
+            }, 1000); // 1000밀리초(1초)마다 호출
+        } else {
+            console.log('복귀 완료');
+        }
     }
 
     checkMoving() {
@@ -160,7 +192,7 @@ export class Mapbox3DModel {
         if (!this.paused) {
             if (this.isMoving) {
                 // Interpolation logic
-                const speed = 0.005; // Adjust speed as needed
+
                 // 메르카토르 좌표를 지리적 좌표로 변환
                 this.modelTranslateLngLat = new mapboxgl.MercatorCoordinate(this.modelTransform.translateX, this.modelTransform.translateY, this.modelTransform.translateZ).toLngLat();
                 const distance = this.getDistance(
@@ -180,9 +212,9 @@ export class Mapbox3DModel {
                 } else {
                     // 아직 이동 중이므로 메르카토르 좌표 간의 거리에 따라 이동
                     this.modelTransform.translateX +=
-                        (this.mercatorTargetPosition.x - this.modelAsMercatorCoordinate.x) * speed;
+                        (this.mercatorTargetPosition.x - this.modelAsMercatorCoordinate.x) * this.modelSpeed;
                     this.modelTransform.translateY +=
-                        (this.mercatorTargetPosition.y - this.modelAsMercatorCoordinate.y) * speed;
+                        (this.mercatorTargetPosition.y - this.modelAsMercatorCoordinate.y) * this.modelSpeed;
                     // this.modelTransform.translateZ +=
                     //     (this.mercatorTargetPosition.z - this.modelAsMercatorCoordinate.z) * speed;
                 }

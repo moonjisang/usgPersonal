@@ -12,15 +12,40 @@ const map = new mapboxgl.Map({
     antialias: true
 });
 
-let model; // 전역 변수로 model 선언
+let modelSpeed = 0.005
+const modelSpeed2 = 0.008
 let coordinates
-let currentIndex = 1
 // 변수를 사용하여 현재 상태를 저장합니다.
 let isSimulationPaused = false;
 
+const Url = '/static/gltf/drone2/scene.gltf'; // Update with your model path
+const Url2 = '/static/gltf/drone3/scene.gltf';
+let modelUrl = Url
+const models = []
+
 map.on('load', function () {
-    const modelUrl = '/static/gltf/drone/scene.gltf'; // Update with your model path
-    model = new Mapbox3DModel(modelUrl, map, [128.09298831977316, 35.1541499657056], 100);
+    // 서버에 POST 요청을 보냅니다.
+    fetch('/get_drones')
+    .then(response => response.json())
+    .then(data => {
+        // 응답 데이터를 처리합니다. 예: 최단 경로로 3D 모델을 이동합니다.
+        data.map((drone) => {
+            console.log("index :", drone.index);
+            console.log("loc :", drone.loc);
+            console.log('url : ', drone.frame)
+            
+            // drone.frame 값에 따라 modelUrl 설정
+            modelUrl = (drone.frame === 'Url2') ? Url2 : Url;
+            const model = new Mapbox3DModel(modelUrl, map, drone.loc, 100, drone.index, modelSpeed);
+            modelSpeed += 0.003
+            models.push(model)
+        })
+    })
+    .catch(error => console.error('데이터 가져오기 오류:', error));
+
+    
+    // model = new Mapbox3DModel(modelUrl, map, [128.09298831977316, 35.1541499657056], 100, 1, modelSpeed);
+    // model2 = new Mapbox3DModel(modelUrl2, map, [128.09298831977316, 35.1541499657056], 100, 2, modelSpeed2);
 
     // Fetch coordinates from your API
     fetch('get_coordinates')
@@ -89,49 +114,25 @@ document.getElementById('route_button').addEventListener('click', function() {
     .catch(error => console.error('데이터 가져오기 오류:', error));
 });
 
-// moveModelToNextCoordinate 함수를 외부에서 호출할 수 있도록 전역 함수로 정의
-function moveModelToNextCoordinate() {
-    if (currentIndex < coordinates.length) {
-        console.log('index : ', currentIndex)
-        const nodeCoordinates = coordinates[currentIndex];
-        console.log('coord : ', coordinates[currentIndex])
 
-        // 3D 모델을 다음 좌표로 이동합니다.
-        model.setTargetPosition(nodeCoordinates.lng, nodeCoordinates.lat, 100); // 좌표값 및 이동 시간을 조정하십시오.
-        
-        // 주기적으로 checkMoving 함수 호출하여 움직임 확인
-        const checkInterval = setInterval(function() {
-            if (model.checkMoving()) {
-                // 3D 모델이 이동 완료된 경우 실행할 코드를 여기에 추가
-                console.log("3D 모델 이동 완료");
-
-                // 이동 완료 시 clearInterval을 사용하여 주기적인 호출 중지
-                clearInterval(checkInterval);
-
-                // currentIndex를 증가시켜 다음 좌표로 이동
-                currentIndex++;
-                
-                // 다음 좌표로 이동하는 함수 호출 (이 부분을 작성해야 함)
-                moveModelToNextCoordinate();
-            }
-        }, 1000); // 1000밀리초(1초)마다 호출
-    } else {
-        console.log('복귀 완료')
-    }
-}
 
 // Next Route 버튼에 대한 이벤트 리스너 추가
-document.getElementById('start_button').addEventListener('click', moveModelToNextCoordinate);
+document.getElementById('start_button').addEventListener('click', function() {
+    models[0].moveModelToNextCoordinate(coordinates)
+    models[1].moveModelToNextCoordinate(coordinates)
+});
 
 // Stop Route 버튼에 대한 이벤트 리스너 추가
 document.getElementById('stop_button').addEventListener('click', function() {
     if (!isSimulationPaused) {
         // 3D 모델의 이동을 일시 정지하고 버튼 텍스트를 변경합니다.
-        model.pauseMoving();
+        models[0].pauseMoving();
+        models[1].pauseMoving();
         this.textContent = 'Resume Simulation'; // 버튼 텍스트 변경
     } else {
         // "Resume Simulation" 버튼을 클릭하면 3D 모델의 이동을 다시 시작하고 버튼 텍스트를 변경합니다.
-        model.resumeMoving();
+        models[0].resumeMoving();
+        models[1].resumeMoving();
         this.textContent = 'Stop Route'; // 버튼 텍스트 변경
     }
     isSimulationPaused = !isSimulationPaused; // 상태를 토글합니다.

@@ -23,6 +23,7 @@ db = client['usg']  # 여기서 'your_database_name'을 실제 데이터베이�
 collectionGps = db['gps']  # 좌표를 저장할 컬렉션 이름
 collectionStartGps = db['startGps']
 collectionEndGps = db['endGps']
+collectionDrone = db['drone']
 
 def update_nodeindex():
     # 1. gps 컬렉션에서 모든 nodeIndex 값을 가져온다.
@@ -56,6 +57,12 @@ def web_html():
 def simulation_html():
     return render_template('simulation.html')  # index.html 파일을 렌더링합니다.
 
+@app.route('/get_drones', methods=['GET'])
+def get_drones():
+    # MongoDB에서 좌표 데이터 가져오기
+    drones_data = list(collectionDrone.find({}, {'_id': 0}))
+
+    return jsonify(drones_data)
 
 # flask에서 좌표를 가져오는 라우트
 @app.route('/get_coordinates', methods=['GET'])

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Racing drone (Lite Graphics Version)
+* source:	https://sketchfab.com/3d-models/racing-drone-lite-graphics-version-370fa7dd443c409789c9b0a2794a61ac
+* author:	BlueMesh (https://sketchfab.com/VapTor)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Racing drone (Lite Graphics Version)" (https://sketchfab.com/3d-models/racing-drone-lite-graphics-version-370fa7dd443c409789c9b0a2794a61ac) by BlueMesh (https://sketchfab.com/VapTor) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
