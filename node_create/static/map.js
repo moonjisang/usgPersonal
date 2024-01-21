@@ -2,7 +2,7 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoiYW5zOTM5IiwiYSI6ImNsY3g3dHR4czIwNGszdms2ZDA5eHZtOHIifQ.v1aKMbtU1_vRo4ssSlKCqA';
  const map = new mapboxgl.Map({
      // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-     style: 'mapbox://styles/mapbox/light-v11',
+     style: 'mapbox://styles/mapbox/streets-v11',
      center: [128.097628451928, 35.153823441258],
      zoom: 15.5,
      pitch: 45,
@@ -58,6 +58,39 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiYW5zOTM5IiwiYSI6ImNsY3g3dHR4czIwNGszdms2ZDA5e
          },
          labelLayerId
      );
+     
+     // 드론의 현재 위치 (예시)
+    var dronePosition = { longitude: 128.0957928299904, latitude: 35.154113257858995, altitude: 0 };
+
+    // 건물과 드론의 충돌 감지
+    function checkCollision(dronePosition) {
+        console.log('check!')
+        // 건물 레이어의 피처들을 조회
+        var buildingFeatures = map.queryRenderedFeatures({ layers: ['building'] });
+        console.log('buiding : ', buildingFeatures)
+        for (var i = 0; i < buildingFeatures.length; i++) {
+            var building = buildingFeatures[i];
+            var buildingCoordinates = building.geometry.coordinates[0]; // 건물의 경계 좌표
+            var buildingHeight = building.properties.height || 0; // 건물의 높이
+
+            // 건물의 경계 상자(Bounding Box) 계산
+            var bounds = buildingCoordinates.reduce(function(bounds, coord) {
+                return bounds.extend(coord);
+            }, new mapboxgl.LngLatBounds(buildingCoordinates[0], buildingCoordinates[0]));
+
+            // 드론의 위치가 건물의 경계 상자 내에 있는지 확인
+            if (bounds.contains([dronePosition.longitude, dronePosition.latitude]) &&
+                dronePosition.altitude < buildingHeight) {
+                console.log('충돌 발생:', building);
+                return true;
+            }
+        }
+        return false;
+    }
+    checkCollision(dronePosition)
+    // 드론 위치가 변경될 때마다 충돌 감지 실행
+    // 예: 드론의 위치 업데이트 함수 내에서 checkCollision(dronePosition) 호출
+
  });
 
 // 기존에 생성된 마커들
@@ -475,3 +508,4 @@ function deleteNodeEdges(nodeIndex1, nodeIndex2) {
         console.error('Error:', error);
     });
 }
+

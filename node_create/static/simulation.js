@@ -3,7 +3,7 @@ import { Mapbox3DModel } from './3d_model.js'; // Adjust the path as necessary
 mapboxgl.accessToken = 'pk.eyJ1IjoiYW5zOTM5IiwiYSI6ImNsY3g3dHR4czIwNGszdms2ZDA5eHZtOHIifQ.v1aKMbtU1_vRo4ssSlKCqA';
 
 const map = new mapboxgl.Map({
-    style: 'mapbox://styles/mapbox/light-v11',
+    style: 'mapbox://styles/ans939/clrlws8mz001v01pq6w8396yy',
     center: [128.097628451928, 35.153823441258],
     zoom: 15.5,
     pitch: 45,
@@ -88,6 +88,17 @@ map.on('load', function () {
         });
     })
     .catch(error => console.error('Error fetching data:', error));
+
+    // 서버로 GET 요청을 보냅니다.
+    fetch('/get_weather_data')
+    .then(response => response.json())
+    .then(wind_data => {
+    // 날씨 정보를 처리하는 코드를 작성합니다.
+    console.log('받아온 날씨 정보:', wind_data);
+    // 받아온 날씨 정보(weatherData)를 원하는 대로 처리합니다.
+    // 풍향 화살표 아이콘 추가
+    })
+    .catch(error => console.error('날씨 데이터 가져오기 오류:', error));
 });
 
 document.getElementById('route_button').addEventListener('click', function() {

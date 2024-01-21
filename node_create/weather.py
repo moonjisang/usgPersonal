@@ -2,40 +2,74 @@ import requests
 from urllib import parse
 import json
 from pyproj import Proj, transform
-
+from flask import Blueprint, jsonify
 import math
+import datetime
 
+weather_blueprint = Blueprint('weather', __name__)
 
-url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst'
-key = 'vE5pv9fzPca1B7EEvgAkv48NgFzgTHe2HePqIQg0rRxyklrVJAKAxBjgmjXHRL+3ErTVNH4PA8RbszGaNolAtw=='
-serviceKeyDecoded = parse.unquote(key, 'UTF-8')
+global_base_time_str = ''
+global_base_date_str = ''
 
-NX = 80  # X축 격자점 수
-NY = 75  # Y축 격자점 수
+@weather_blueprint.route('/get_weather_data', methods=['GET'])
+def get_weather_data():
 
-params ={'serviceKey' : key, 'pageNo' : '1', 'numOfRows' : '1000', 'dataType' : 'JSON', 'base_date' : '20240118', 'base_time' : '1930', 'nx' : NX, 'ny' : NY }
+    def checkTime():
+        # 현재 시간 얻기
+        current_time = datetime.datetime.now()
 
-response = requests.get(url, params=params)
+        # 현재 시간의 분 확인
+        current_minute = current_time.minute
 
+        # 분이 40분 이상이면 다음 시간대로 설정
+        if current_minute >= 40:
+            base_time = current_time
+        else:
+            base_time = current_time - datetime.timedelta(hours=1)
+        # 'base_time' 설정 (예: 18:00 또는 19:00)
+        base_time = base_time.replace(minute=0, second=0, microsecond=0)
 
-# 응답 JSON 파싱
-data = json.loads(response.content)
-print(data)
+        global global_base_time_str
+        global global_base_date_str
+        # 'base_time'을 문자열로 변환 (예: '1800' 또는 '1900')
+        base_time_str = base_time.strftime('%H%M')
+        global_base_time_str = base_time_str
 
+        year_and_date = current_time.strftime("%Y-%m-%d")
+        global_base_date_str = year_and_date.replace("-", "")
+        print('현재 시간:', current_time)
+        print('base_time:', base_time_str)
 
-weather = data["response"]["body"]["items"]["item"]
+    checkTime()
 
-filtered_weather = [item for item in weather if item['fcstDate'] == '20240118' and item['fcstTime'] == '2000']
-print(filtered_weather)
+    url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst'
+    key = 'vE5pv9fzPca1B7EEvgAkv48NgFzgTHe2HePqIQg0rRxyklrVJAKAxBjgmjXHRL+3ErTVNH4PA8RbszGaNolAtw=='
+    serviceKeyDecoded = parse.unquote(key, 'UTF-8')
 
-with open('weather_data.json', 'w', encoding='utf-8') as json_file:
-    json.dump(filtered_weather, json_file, ensure_ascii=False, indent=4)
+    NX = 80  # X축 격자점 수
+    NY = 75  # Y축 격자점 수
 
-print('데이터가 "weather_data.json" 파일로 저장되었습니다.')
+    params ={'serviceKey': key, 'pageNo': '1', 'numOfRows': '1000', 'dataType': 'JSON', 'base_date': global_base_date_str,
+             'base_time': global_base_time_str, 'nx': NX, 'ny': NY }
 
+    response = requests.get(url, params=params)
 
+    # 응답 JSON 파싱
+    data = json.loads(response.content)
+    filtered_data = data['response']['body']['items']['item']
+    
+    wind_data = []
+    for item in filtered_data:
+        if item['category'] == 'VVV' or item['category'] == 'WSD':
+            wind_data.append(item)
+    
+    print(wind_data)
+    return jsonify(wind_data)
 
-import math
+    # with open('weather_data.json', 'w', encoding='utf-8') as json_file:
+    #     json.dump(data, json_file, ensure_ascii=False, indent=4)
+    # print('데이터가 "weather_data.json" 파일로 저장되었습니다.')
+
 
 Re = 6371.00877     ##  지도반경
 grid = 5.0          ##  격자간격 (km)

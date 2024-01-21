@@ -4,12 +4,14 @@ from pymongo import MongoClient
 import os
 import math
 from pathFinding import pathFinding_blueprint  # Import the blueprint
+from weather import weather_blueprint
 
 app = Flask(__name__)
 CORS(app)
 
 # Register the blueprint
 app.register_blueprint(pathFinding_blueprint)
+app.register_blueprint(weather_blueprint)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -49,8 +51,8 @@ def serve_static(filename):
 
 # 웹 페이지를 렌더링하는 라우트
 @app.route('/')
-def web_html():
-    return render_template('web.html')  # index.html 파일을 렌더링합니다.
+def map_html():
+    return render_template('map.html')  # index.html 파일을 렌더링합니다.
 
 # 웹 페이지를 렌더링하는 라우트
 @app.route('/simulation')
