@@ -93,12 +93,36 @@ map.on('load', function () {
     fetch('/get_weather_data')
     .then(response => response.json())
     .then(wind_data => {
-    // 날씨 정보를 처리하는 코드를 작성합니다.
-    console.log('받아온 날씨 정보:', wind_data);
-    // 받아온 날씨 정보(weatherData)를 원하는 대로 처리합니다.
-    // 풍향 화살표 아이콘 추가
+        // 날씨 정보를 처리하는 코드를 작성합니다.
+        console.log('받아온 날씨 정보:', wind_data);
+        // 받아온 날씨 정보(weatherData)를 원하는 대로 처리합니다.
+        // 바람의 방향 및 풍속 정보
+        var windDirection = wind_data[0].obsrValue; // 풍향 (도)
+        var windSpeed = wind_data[1].obsrValue; // 풍속 (m/s)
+
+        // 바람의 방향을 나타내는 마커 추가
+        var el = document.createElement('div');
+        el.className = 'marker';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.backgroundImage = 'url(http://localhost:5000/upload)'; // 여기에 바람 방향 화살표 이미지 URL을 입력하세요.
+        el.style.backgroundSize = '100%';
+        el.style.transform = `rotate(${windDirection}deg)`; // 바람 방향에 따라 이미지 회전
+
+        // 마커를 지도에 추가
+        new mapboxgl.Marker(el)
+            .setLngLat([128.0928, 35.1542]) // 마커 위치 (경도, 위도)
+            .addTo(map);
+
+        // 풍속 표시
+        var popup = new mapboxgl.Popup({ offset: 25 })
+            .setText(`풍속: ${windSpeed} m/s`)
+            .setLngLat([128.0928, 35.1542])
+            .addTo(map);
     })
     .catch(error => console.error('날씨 데이터 가져오기 오류:', error));
+
+    
 });
 
 document.getElementById('route_button').addEventListener('click', function() {

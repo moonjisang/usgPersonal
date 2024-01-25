@@ -15,8 +15,8 @@ app.register_blueprint(weather_blueprint)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
-    filepath = './static/marker/red_marker.jpg'  # Change to your local file path
-    return send_file(filepath, mimetype='image/jpeg')
+    filepath = './static/marker/arrow.png'  # Change to your local file path
+    return send_file(filepath, mimetype='image/png')
 
 
 # MongoDB 연결 설정

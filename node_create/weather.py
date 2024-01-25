@@ -60,7 +60,7 @@ def get_weather_data():
     
     wind_data = []
     for item in filtered_data:
-        if item['category'] == 'VVV' or item['category'] == 'WSD':
+        if item['category'] == 'VEC' or item['category'] == 'WSD':
             wind_data.append(item)
     
     print(wind_data)
