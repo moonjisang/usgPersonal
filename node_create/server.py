@@ -5,6 +5,7 @@ import os
 import math
 from pathFinding import pathFinding_blueprint  # Import the blueprint
 from weather import weather_blueprint
+from DQN import DQN_blueprint
 
 app = Flask(__name__)
 CORS(app)
@@ -12,6 +13,7 @@ CORS(app)
 # Register the blueprint
 app.register_blueprint(pathFinding_blueprint)
 app.register_blueprint(weather_blueprint)
+app.register_blueprint(DQN_blueprint)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():

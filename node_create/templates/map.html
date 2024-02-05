@@ -9,28 +9,79 @@
 <style>
 body { margin: 0; padding: 0; }
 #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-#select-button { position: absolute; top: 10px; left: 10px; padding: 10px; background-color: #0078ff; color: white; cursor: pointer; }
-/* 팝업 메뉴의 스타일 */
+.button-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 10px;
+}
+.button {
+    padding: 10px 20px; /* 패딩 조정 */
+    color: white;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: background 0.3s ease, box-shadow 0.3s ease; /* 그라데이션 및 그림자 애니메이션 추가 */
+    border-radius: 25px; /* 라운드된 모서리 */
+    background-image: linear-gradient(to bottom, #0078ff, #0050aa);
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* 그림자 효과 추가 */
+}
+
+.button:hover {
+    background-image: linear-gradient(to bottom, #0050aa, #003088); /* hover 시 그라데이션 변경 */
+}
 .popup {
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 10px;
-        }
-#reloadButton { position: absolute; top: 10px; left: 180px; padding: 10px; background-color: #0078ff; color: white; cursor: pointer; }
-#simulation-button { position: absolute; top: 10px; left: 320px; padding: 10px; background-color: #0078ff; color: white; cursor: pointer; }
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+}
 </style>
 </head>
 <body>
     <div id="map"></div>
-    <div id="select-button">Select Coordinates</div>
-    <button id="reloadButton">Load Coordinates</button>
+    <div class="button-container">
+        <div class="button" id="select-button">Select Coordinates</div>
+        <div class="button" id="reloadButton">Load Coordinates</div>
+        <div class="button" id="simulation-button">시뮬레이션</div>
+        <div class="button" id="DQN-button">DQN - 강화학습 시작</div>
+    </div>
     <script src="../static/map.js"></script>
-
-    <button id="simulation-button">시뮬레이션</button>
     <script>
         document.getElementById('simulation-button').addEventListener('click', function() {
-            window.open('simulation', '_blank'); // 새 창에서 시뮬레이션 웹 페이지를 엽니다
+            window.open('simulation', '_blank');
+        });
+        const dqnButton = document.getElementById('DQN-button');
+        let loadingAnimationInterval;
+
+        function startLoadingAnimation() {
+            loadingAnimationInterval = setInterval(() => {
+                const randomColor1 = Math.floor(Math.random() * 256);
+                const randomColor2 = Math.floor(Math.random() * 256);
+                dqnButton.style.backgroundImage = `linear-gradient(to bottom, rgb(${randomColor1}, ${randomColor2}, 255), rgb(${randomColor2}, ${randomColor1}, 255))`;
+            }, 500); // 0.5초마다 배경 색상 변경
+        }
+
+        function stopLoadingAnimation() {
+            clearInterval(loadingAnimationInterval);
+            dqnButton.style.backgroundImage = 'linear-gradient(to bottom, #0078ff, #0050aa)';
+        }
+
+        dqnButton.addEventListener('click', function() {
+            startLoadingAnimation();
+
+            fetch('/train_dqn')
+            .then(response => response.json())
+            .then(data => {
+                console.log('DQN 모델 학습 결과:', data);
+                alert('DQN - 강화학습 알고리즘 학습이 완료되었습니다.');
+                stopLoadingAnimation(); // 작업이 완료되면 애니메이션 멈춤
+            })
+            .catch(error => {
+                console.error('DQN 모델 학습 오류:', error);
+                stopLoadingAnimation(); // 오류 발생 시 애니메이션 멈춤
+            });
         });
     </script>
 </body>

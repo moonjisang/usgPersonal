@@ -131,6 +131,7 @@ document.getElementById('route_button').addEventListener('click', function() {
     fetch('/calculate_shortest_path')
     .then(response => response.json())
     .then(data => {
+        console.log('data : ', data)
         // 응답 데이터를 처리합니다. 예: 최단 경로로 3D 모델을 이동합니다.
         console.log("최단 경로:", data.shortest_path);
         console.log("좌표값:", data.coordinates);
